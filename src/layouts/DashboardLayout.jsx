@@ -9,6 +9,7 @@ import { ALL_ROLES, ROLE_LABELS } from '../utils/constants'
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: 'dashboard', roles: ALL_ROLES },
   { to: '/departments', label: 'Departments', icon: 'building', roles: ['admin'] },
+  { to: '/receptionists', label: 'Receptionists', icon: 'reception', roles: ['admin'] },
   { to: '/doctors', label: 'Doctors', icon: 'stethoscope', roles: ALL_ROLES },
   { to: '/patients', label: 'Patients', icon: 'users', roles: ['admin', 'receptionist', 'doctor'] },
   { to: '/appointments', label: 'Appointments', icon: 'calendar', roles: ALL_ROLES },
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
 const TITLES = {
   '/dashboard': 'Dashboard',
   '/departments': 'Departments',
+  '/receptionists': 'Receptionists',
   '/doctors': 'Doctors',
   '/patients': 'Patients',
   '/appointments': 'Appointments',

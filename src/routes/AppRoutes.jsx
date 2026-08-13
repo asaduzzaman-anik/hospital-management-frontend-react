@@ -7,6 +7,8 @@ import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { ProfilePage } from '../pages/profile/ProfilePage'
 import { DepartmentListPage } from '../pages/departments/DepartmentListPage'
 import { DepartmentFormPage } from '../pages/departments/DepartmentFormPage'
+import { ReceptionistListPage } from '../pages/receptionists/ReceptionistListPage'
+import { ReceptionistFormPage } from '../pages/receptionists/ReceptionistFormPage'
 import { DoctorListPage } from '../pages/doctors/DoctorListPage'
 import { DoctorDetailPage } from '../pages/doctors/DoctorDetailPage'
 import { DoctorFormPage } from '../pages/doctors/DoctorFormPage'
@@ -46,6 +48,9 @@ export function AppRoutes() {
             <Route path="/departments" element={<DepartmentListPage />} />
             <Route path="/departments/new" element={<DepartmentFormPage />} />
             <Route path="/departments/:id/edit" element={<DepartmentFormPage />} />
+            <Route path="/receptionists" element={<ReceptionistListPage />} />
+            <Route path="/receptionists/new" element={<ReceptionistFormPage />} />
+            <Route path="/receptionists/:id/edit" element={<ReceptionistFormPage />} />
           </Route>
 
           <Route path="/doctors" element={<DoctorListPage />} />

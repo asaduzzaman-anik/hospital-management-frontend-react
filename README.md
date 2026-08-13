@@ -15,7 +15,7 @@ The Django API is the source of truth for authentication, permissions, validatio
 - JWT login, patient self-registration, logout, and automatic token refresh
 - Role-aware navigation and protected routes for Admin, Doctor, Patient, and Receptionist
 - Dashboard counts derived from existing paginated list endpoints (`count`)
-- Department, doctor, patient, appointment, prescription, medicine, and billing modules
+- Department, receptionist, doctor, patient, appointment, prescription, medicine, and billing modules
 - Search, filters, and page-number pagination using the backend query parameters
 - Appointment state changes through dedicated API actions: approve, complete, cancel
 - Billing payment through `PATCH /bills/{id}/mark_as_paid/`
@@ -120,7 +120,7 @@ Keep the Django server running in a second terminal.
 | Role | How to obtain | Typical access |
 | --- | --- | --- |
 | Admin | `python manage.py createsuperuser` (role is set to `admin`) | Full management of departments, staff records, appointments, medicines, prescriptions, and bills |
-| Receptionist | Created by an admin from Doctors/Patients staff flows or Django admin / users API | Doctors, patients, appointments, medicines, billing |
+| Receptionist | Created by an admin at `/receptionists` | Doctors, patients, appointments, medicines, billing |
 | Doctor | Created by Admin/Receptionist (user + doctor profile) | Own appointments, complete visits, create prescriptions, read medicines/patients |
 | Patient | Public registration at `/register`, then complete medical profile | Browse doctors, book appointments, view own prescriptions and bills |
 
@@ -134,6 +134,7 @@ Public registration always creates a **patient** account. Staff roles cannot be 
 | Dashboard | `/dashboard` |
 | Profile | `/profile` |
 | Departments | `/departments` (admin) |
+| Receptionists | `/receptionists` (admin) |
 | Doctors | `/doctors` |
 | Patients | `/patients` |
 | Appointments | `/appointments` |
@@ -189,7 +190,7 @@ Pagination is DRF `PageNumberPagination` with page size 10:
 ## Demo workflow
 
 1. Start the backend, create a superuser, and log in as admin.
-2. Create at least one department, one doctor, one medicine, and optionally a receptionist workflow.
+2. Create at least one department, one doctor, one medicine, and optionally a receptionist from `/receptionists`.
 3. Register a patient, complete the medical profile, and book an available doctor.
 4. Approve the appointment as admin/receptionist, complete it as the doctor, then create a prescription.
 5. Generate a bill as admin/receptionist and mark it paid.

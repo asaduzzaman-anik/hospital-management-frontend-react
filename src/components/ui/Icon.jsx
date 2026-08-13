@@ -19,6 +19,15 @@ export function Icon({ name, className = 'h-5 w-5' }) {
         <path d="M13.5 19.5c.4-1.8 1.6-3.2 3.2-3.6" />
       </>
     ),
+    reception: (
+      <>
+        <circle cx="12" cy="7.5" r="3" />
+        <path d="M6.5 19.5c.7-3.4 3-5.2 5.5-5.2s4.8 1.8 5.5 5.2" />
+        <path d="M5.5 8.5A6.5 6.5 0 0 0 12 14.5" />
+        <path d="M18.5 8.5A6.5 6.5 0 0 1 12 14.5" />
+        <path d="M5.5 8.5v2.2M18.5 8.5v2.2" />
+      </>
+    ),
     stethoscope: (
       <>
         <path d="M6 4v7a4 4 0 0 0 8 0V4" />

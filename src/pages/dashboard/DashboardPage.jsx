@@ -123,6 +123,9 @@ export function DashboardPage() {
                 <Link to="/doctors/new"><Button variant="secondary">Add doctor</Button></Link>
               </>
             )}
+            {user.role === 'admin' && (
+              <Link to="/receptionists/new"><Button variant="secondary">Add receptionist</Button></Link>
+            )}
             {(user.role === 'doctor' || user.role === 'admin') && (
               <Link to="/prescriptions/new"><Button variant="secondary">New prescription</Button></Link>
             )}
