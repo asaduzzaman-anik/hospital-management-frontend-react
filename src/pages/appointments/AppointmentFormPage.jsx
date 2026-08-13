@@ -90,7 +90,11 @@ export function AppointmentFormPage() {
         doctor: Number(values.doctor),
         appointment_date: fromDateTimeLocal(values.appointment_date),
       }
-      if (isStaff) payload.patient = Number(values.patient)
+      if (isStaff) {
+        payload.patient = Number(values.patient)
+      } else if (user.role === 'patient' && patientProfile?.id) {
+        payload.patient = patientProfile.id
+      }
       if (isEdit) await appointmentsApi.update(id, payload)
       else await appointmentsApi.create(payload)
       toast.success(isEdit ? 'Appointment updated.' : 'Appointment booked.')
