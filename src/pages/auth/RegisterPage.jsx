@@ -51,7 +51,7 @@ export function RegisterPage() {
         password: values.password,
       })
       toast.success('Account created. Complete your patient profile to book appointments.')
-      navigate('/profile')
+      navigate('/profile/edit')
     } catch (error) {
       setErrors(getFieldErrors(error))
       setFormError(getApiError(error))

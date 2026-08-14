@@ -81,7 +81,7 @@ export function DashboardPage() {
       {user.role === 'patient' && !patientProfile && (
         <Alert type="error">
           Your medical profile is incomplete. Complete it before booking appointments.{' '}
-          <Link to="/profile" className="font-medium underline">
+          <Link to="/profile/edit" className="font-medium underline">
             Complete profile
           </Link>
         </Alert>

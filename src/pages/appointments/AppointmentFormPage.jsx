@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { appointmentsApi } from '../../api/appointments'
 import { doctorsApi } from '../../api/doctors'
 import { patientsApi } from '../../api/patients'
@@ -120,7 +120,13 @@ export function AppointmentFormPage() {
         <form className="space-y-4" onSubmit={handleSubmit}>
           {formError && <Alert>{formError}</Alert>}
           {user.role === 'patient' && !patientProfile && (
-            <Alert>Complete your medical profile on the Profile page before booking.</Alert>
+            <Alert>
+              Complete your medical profile on the{' '}
+              <Link to="/profile/edit" className="font-medium underline">
+                Profile
+              </Link>{' '}
+              page before booking.
+            </Alert>
           )}
           {isStaff && (
             <Select label="Patient" name="patient" required value={values.patient} onChange={update} error={errors.patient}>

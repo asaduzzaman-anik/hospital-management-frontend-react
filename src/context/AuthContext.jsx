@@ -112,6 +112,7 @@ export function AuthProvider({ children }) {
       register,
       logout,
       refreshProfiles,
+      setUser,
       setPatientProfile,
     }),
     [user, ready, patientProfile, doctorProfile, login, register, logout, refreshProfiles],

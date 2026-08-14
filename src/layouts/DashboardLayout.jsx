@@ -29,6 +29,7 @@ const TITLES = {
   '/prescriptions': 'Prescriptions',
   '/medicines': 'Medicines',
   '/bills': 'Billing',
+  '/profile/edit': 'Edit profile',
   '/profile': 'Profile',
 }
 

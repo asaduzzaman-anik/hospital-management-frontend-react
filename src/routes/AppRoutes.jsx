@@ -5,6 +5,7 @@ import { LoginPage } from '../pages/auth/LoginPage'
 import { RegisterPage } from '../pages/auth/RegisterPage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { ProfilePage } from '../pages/profile/ProfilePage'
+import { ProfileEditPage } from '../pages/profile/ProfileEditPage'
 import { DepartmentListPage } from '../pages/departments/DepartmentListPage'
 import { DepartmentFormPage } from '../pages/departments/DepartmentFormPage'
 import { ReceptionistListPage } from '../pages/receptionists/ReceptionistListPage'
@@ -43,6 +44,7 @@ export function AppRoutes() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/edit" element={<ProfileEditPage />} />
 
           <Route element={<RoleRoute roles={['admin']} />}>
             <Route path="/departments" element={<DepartmentListPage />} />
