@@ -1,12 +1,31 @@
+import { useState } from 'react'
+
+export function AutofillTrap() {
+  return (
+    <div className="pointer-events-none absolute h-px w-px overflow-hidden opacity-0" aria-hidden="true">
+      <input type="text" name="prevent_autofill_username" tabIndex={-1} autoComplete="username" defaultValue="" />
+      <input type="password" name="prevent_autofill_password" tabIndex={-1} autoComplete="current-password" defaultValue="" />
+    </div>
+  )
+}
+
 export function Input({
   label,
   error,
   required,
   className = '',
   id,
+  disableAutofill = false,
+  autoComplete,
+  onFocus,
+  readOnly,
   ...props
 }) {
   const inputId = id || props.name
+  const [lockAutofill, setLockAutofill] = useState(disableAutofill)
+  const resolvedAutoComplete =
+    autoComplete ?? (disableAutofill ? (props.type === 'password' ? 'new-password' : 'off') : undefined)
+
   return (
     <label className="block space-y-1.5">
       {label && (
@@ -17,7 +36,13 @@ export function Input({
       )}
       <input
         id={inputId}
-        className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-100 ${
+        autoComplete={resolvedAutoComplete}
+        readOnly={readOnly || lockAutofill}
+        onFocus={(event) => {
+          if (lockAutofill) setLockAutofill(false)
+          onFocus?.(event)
+        }}
+        className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 read-only:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-100 ${
           error ? 'border-rose-400' : 'border-slate-200'
         } ${className}`}
         {...props}

@@ -4,7 +4,7 @@ import { patientsApi } from '../../api/patients'
 import { usersApi } from '../../api/users'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Button } from '../../components/ui/Button'
-import { Input, Select, Textarea } from '../../components/ui/Fields'
+import { AutofillTrap, Input, Select, Textarea } from '../../components/ui/Fields'
 import { Alert, Card, Spinner } from '../../components/ui/Feedback'
 import { useToast } from '../../context/ToastContext'
 import { BLOOD_GROUPS, GENDERS } from '../../utils/constants'
@@ -139,14 +139,15 @@ export function PatientFormPage() {
         description={isEdit ? 'Update the patient profile.' : 'Creates a user with the patient role, then the patient profile.'}
       />
       <Card className="max-w-3xl p-6">
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="relative space-y-4" autoComplete="off" onSubmit={handleSubmit}>
           {formError && <Alert>{formError}</Alert>}
+          {!isEdit && <AutofillTrap />}
           <div className="grid gap-4 sm:grid-cols-2">
-            {!isEdit && <Input label="Username" name="username" required value={values.username} onChange={update} error={errors.username} />}
-            <Input label="Email" name="email" type="email" value={values.email} onChange={update} error={errors.email} />
+            {!isEdit && <Input label="Username" name="username" required value={values.username} onChange={update} error={errors.username} disableAutofill />}
+            <Input label="Email" name="email" type="email" value={values.email} onChange={update} error={errors.email} autoComplete="off" />
             <Input label="First name" name="first_name" required value={values.first_name} onChange={update} error={errors.first_name} />
             <Input label="Last name" name="last_name" required value={values.last_name} onChange={update} error={errors.last_name} />
-            {!isEdit && <Input label="Password" name="password" type="password" required value={values.password} onChange={update} error={errors.password} />}
+            {!isEdit && <Input label="Password" name="password" type="password" required value={values.password} onChange={update} error={errors.password} disableAutofill />}
             <Input label="Age" name="age" type="number" min="0" required value={values.age} onChange={update} error={errors.age} />
             <Select label="Gender" name="gender" required value={values.gender} onChange={update} error={errors.gender}>
               <option value="">Select gender</option>

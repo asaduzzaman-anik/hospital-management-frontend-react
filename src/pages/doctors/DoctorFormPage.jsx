@@ -6,7 +6,7 @@ import { usersApi } from '../../api/users'
 import { fetchAllPages } from '../../api/client'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Button } from '../../components/ui/Button'
-import { Input, Select } from '../../components/ui/Fields'
+import { AutofillTrap, Input, Select } from '../../components/ui/Fields'
 import { Alert, Card, Spinner } from '../../components/ui/Feedback'
 import { useToast } from '../../context/ToastContext'
 import { getApiError, getFieldErrors } from '../../utils/errors'
@@ -146,17 +146,18 @@ export function DoctorFormPage() {
         description={isEdit ? 'Update the doctor profile. Availability can be changed here.' : 'Creates a user with the doctor role, then the doctor profile.'}
       />
       <Card className="max-w-3xl p-6">
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="relative space-y-4" autoComplete="off" onSubmit={handleSubmit}>
           {formError && <Alert>{formError}</Alert>}
+          {!isEdit && <AutofillTrap />}
           <div className="grid gap-4 sm:grid-cols-2">
             {!isEdit && (
-              <Input label="Username" name="username" required value={values.username} onChange={update} error={errors.username} />
+              <Input label="Username" name="username" required value={values.username} onChange={update} error={errors.username} disableAutofill />
             )}
-            <Input label="Email" name="email" type="email" value={values.email} onChange={update} error={errors.email} />
+            <Input label="Email" name="email" type="email" value={values.email} onChange={update} error={errors.email} autoComplete="off" />
             <Input label="First name" name="first_name" required value={values.first_name} onChange={update} error={errors.first_name} />
             <Input label="Last name" name="last_name" required value={values.last_name} onChange={update} error={errors.last_name} />
             {!isEdit && (
-              <Input label="Password" name="password" type="password" required value={values.password} onChange={update} error={errors.password} />
+              <Input label="Password" name="password" type="password" required value={values.password} onChange={update} error={errors.password} disableAutofill />
             )}
             <Select label="Department" name="department" required value={values.department} onChange={update} error={errors.department}>
               <option value="">Select department</option>
