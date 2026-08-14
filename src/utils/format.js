@@ -1,13 +1,32 @@
 export function fullName(user) {
   if (!user) return '—'
+  if (typeof user !== 'object') return '—'
   const name = `${user.first_name || ''} ${user.last_name || ''}`.trim()
-  return name || user.username || '—'
+  return name || user.username || user.name || '—'
+}
+
+export function personName(record) {
+  if (!record) return '—'
+  if (typeof record !== 'object') return '—'
+  const nestedUser = record.user_detail || (record.user && typeof record.user === 'object' ? record.user : null)
+  const fromNested = fullName(nestedUser)
+  if (fromNested !== '—') return fromNested
+  return fullName(record)
 }
 
 export function doctorName(doctor) {
   if (!doctor) return '—'
-  const name = fullName(doctor.user_detail)
-  return name === '—' ? 'Doctor' : `Dr. ${name}`
+  const name = personName(doctor)
+  if (name === '—') return '—'
+  return name.startsWith('Dr.') ? name : `Dr. ${name}`
+}
+
+export function patientName(patient) {
+  return personName(patient)
+}
+
+export function hasPersonName(record) {
+  return personName(record) !== '—'
 }
 
 export function isOwnDoctorAppointment(appointment, user, doctorProfile) {
@@ -20,22 +39,66 @@ export function isOwnDoctorAppointment(appointment, user, doctorProfile) {
 
 export function relatedId(value) {
   if (value == null) return null
-  if (typeof value === 'object') return value.id ?? null
+  if (typeof value === 'object') return value.id ?? value.pk ?? null
   return value
+}
+
+export function entityId(record, keys) {
+  if (!record) return null
+  for (const key of keys) {
+    const fromField = relatedId(record[key])
+    if (fromField != null) return fromField
+    const fromIdField = record[`${key}_id`]
+    if (fromIdField != null && typeof fromIdField !== 'object') return fromIdField
+    const fromDetail = record[`${key}_detail`]?.id
+    if (fromDetail != null) return fromDetail
+  }
+  return null
+}
+
+export function billAppointmentId(bill) {
+  return entityId(bill, ['appointment']) ?? bill?.appointment_detail?.id ?? null
+}
+
+export function billPatientId(bill) {
+  return entityId(bill, ['patient'])
+    ?? entityId(bill?.appointment_detail, ['patient'])
+    ?? bill?.appointment_detail?.patient_detail?.id
+    ?? null
+}
+
+export function billDoctorId(bill) {
+  return entityId(bill, ['doctor'])
+    ?? entityId(bill?.appointment_detail, ['doctor'])
+    ?? bill?.appointment_detail?.doctor_detail?.id
+    ?? null
 }
 
 export function isDoctorRelatedBill(bill, { user, doctorProfile, appointmentIds, patientIds }) {
   if (user?.role !== 'doctor') return true
-  const appointmentId = relatedId(bill?.appointment) ?? bill?.appointment_detail?.id
+  const billDoctorIdValue = billDoctorId(bill)
+  if (billDoctorIdValue != null && doctorProfile) return Number(billDoctorIdValue) === Number(doctorProfile.id)
+  const appointmentId = billAppointmentId(bill)
   if (appointmentId != null) return appointmentIds.has(Number(appointmentId))
   if (bill?.appointment_detail) return isOwnDoctorAppointment(bill.appointment_detail, user, doctorProfile)
-  const patientId = relatedId(bill?.patient) ?? bill?.patient_detail?.id
+  const patientId = billPatientId(bill)
   return patientId != null && patientIds.has(Number(patientId))
 }
 
-export function patientName(patient) {
-  if (!patient) return '—'
-  return fullName(patient.user_detail)
+export function billPatientDetail(bill) {
+  if (!bill) return null
+  if (hasPersonName(bill.patient_detail)) return bill.patient_detail
+  if (hasPersonName(bill.appointment_detail?.patient_detail)) return bill.appointment_detail.patient_detail
+  if (bill.patient && typeof bill.patient === 'object' && hasPersonName(bill.patient)) return bill.patient
+  return bill.patient_detail || bill.appointment_detail?.patient_detail || null
+}
+
+export function billDoctorDetail(bill) {
+  if (!bill) return null
+  if (hasPersonName(bill.doctor_detail)) return bill.doctor_detail
+  if (hasPersonName(bill.appointment_detail?.doctor_detail)) return bill.appointment_detail.doctor_detail
+  if (bill.doctor && typeof bill.doctor === 'object' && hasPersonName(bill.doctor)) return bill.doctor
+  return bill.doctor_detail || bill.appointment_detail?.doctor_detail || null
 }
 
 export function formatDateTime(value) {

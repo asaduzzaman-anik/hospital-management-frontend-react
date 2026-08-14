@@ -11,7 +11,17 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { STAFF_ROLES } from '../../utils/constants'
 import { getApiError } from '../../utils/errors'
-import { formatDateTime, formatMoney, isDoctorRelatedBill, patientName, relatedId } from '../../utils/format'
+import {
+  billDoctorDetail,
+  billPatientDetail,
+  doctorName,
+  formatDateTime,
+  formatMoney,
+  isDoctorRelatedBill,
+  patientName,
+  relatedId,
+} from '../../utils/format'
+import { hydrateBill } from '../../utils/billRelations'
 
 export function BillDetailPage() {
   const { id } = useParams()
@@ -28,7 +38,7 @@ export function BillDetailPage() {
     let cancelled = false
     async function load() {
       try {
-        const data = await billsApi.get(id)
+        const data = await hydrateBill(await billsApi.get(id))
         if (cancelled) return
         setBill(data)
         if (user.role === 'doctor') {
@@ -57,7 +67,7 @@ export function BillDetailPage() {
   async function markPaid() {
     setWorking(true)
     try {
-      const updated = await billsApi.markAsPaid(id)
+      const updated = await hydrateBill(await billsApi.markAsPaid(id))
       setBill(updated)
       toast.success('Bill marked as paid.')
     } catch (err) {
@@ -71,6 +81,9 @@ export function BillDetailPage() {
   if (error) return <Alert>{error}</Alert>
   if (!bill) return null
   if (!allowed) return <Navigate to="/forbidden" replace />
+
+  const patient = billPatientDetail(bill)
+  const doctor = billDoctorDetail(bill)
 
   return (
     <div>
@@ -87,7 +100,8 @@ export function BillDetailPage() {
       />
       <Card className="max-w-2xl p-6">
         <dl className="grid gap-4 sm:grid-cols-2 text-sm">
-          <div><dt className="text-slate-500">Patient</dt><dd className="font-medium">{patientName(bill.patient_detail)}</dd></div>
+          <div><dt className="text-slate-500">Patient</dt><dd className="font-medium">{patientName(patient)}</dd></div>
+          <div><dt className="text-slate-500">Doctor</dt><dd className="font-medium">{doctorName(doctor)}</dd></div>
           <div><dt className="text-slate-500">Amount</dt><dd className="font-medium">{formatMoney(bill.amount)}</dd></div>
           <div>
             <dt className="text-slate-500">Status</dt>

@@ -12,7 +12,8 @@ import { Alert, EmptyState, Spinner } from '../../components/ui/Feedback'
 import { useAuth } from '../../context/AuthContext'
 import { PAGE_SIZE, STAFF_ROLES } from '../../utils/constants'
 import { getApiError } from '../../utils/errors'
-import { formatDateTime, formatMoney, isDoctorRelatedBill, patientName, relatedId, toDateKey } from '../../utils/format'
+import { billDoctorDetail, billPatientDetail, doctorName, formatDateTime, formatMoney, isDoctorRelatedBill, patientName, relatedId, toDateKey } from '../../utils/format'
+import { hydrateBills } from '../../utils/billRelations'
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest first' },
@@ -21,6 +22,8 @@ const SORT_OPTIONS = [
   { value: 'amount_asc', label: 'Amount (low-high)' },
   { value: 'patient_asc', label: 'Patient (A-Z)' },
   { value: 'patient_desc', label: 'Patient (Z-A)' },
+  { value: 'doctor_asc', label: 'Doctor (A-Z)' },
+  { value: 'doctor_desc', label: 'Doctor (Z-A)' },
 ]
 
 const AVATAR_TONES = [
@@ -90,10 +93,14 @@ function avatarTone(name) {
   return AVATAR_TONES[hash % AVATAR_TONES.length]
 }
 
-function matchesPatientSearch(row, query) {
+function matchesSearch(row, query) {
   const q = query.trim().toLowerCase()
   if (!q) return true
-  return patientName(row.patient_detail).toLowerCase().includes(q)
+  return [
+    String(row.id),
+    patientName(billPatientDetail(row)),
+    doctorName(billDoctorDetail(row)),
+  ].some((value) => String(value || '').toLowerCase().includes(q))
 }
 
 function matchesDateRange(row, from, to) {
@@ -141,10 +148,11 @@ export function BillListPage() {
             .map((item) => Number(relatedId(item.patient) ?? item.patient_detail?.id))
             .filter(Boolean),
         )
-        const matched = all.filter(
+        const hydrated = await hydrateBills({ results: all })
+        const matched = hydrated.results.filter(
           (row) =>
             isDoctorRelatedBill(row, { user, doctorProfile, appointmentIds, patientIds }) &&
-            matchesPatientSearch(row, nextSearch) &&
+            matchesSearch(row, nextSearch) &&
             matchesDateRange(row, nextFrom, nextTo),
         )
         const start = (nextPage - 1) * PAGE_SIZE
@@ -153,7 +161,7 @@ export function BillListPage() {
           count: matched.length,
         })
       } else {
-        setData(await billsApi.list({ ...params, page: nextPage }))
+        setData(await hydrateBills(await billsApi.list({ ...params, page: nextPage })))
       }
     } catch (err) {
       setError(getApiError(err))
@@ -189,8 +197,10 @@ export function BillListPage() {
       if (sort === 'oldest') return new Date(a.created_at || 0) - new Date(b.created_at || 0)
       if (sort === 'amount_desc') return (Number(b.amount) || 0) - (Number(a.amount) || 0)
       if (sort === 'amount_asc') return (Number(a.amount) || 0) - (Number(b.amount) || 0)
-      if (sort === 'patient_asc') return patientName(a.patient_detail).localeCompare(patientName(b.patient_detail))
-      if (sort === 'patient_desc') return patientName(b.patient_detail).localeCompare(patientName(a.patient_detail))
+      if (sort === 'patient_asc') return patientName(billPatientDetail(a)).localeCompare(patientName(billPatientDetail(b)))
+      if (sort === 'patient_desc') return patientName(billPatientDetail(b)).localeCompare(patientName(billPatientDetail(a)))
+      if (sort === 'doctor_asc') return doctorName(billDoctorDetail(a)).localeCompare(doctorName(billDoctorDetail(b)))
+      if (sort === 'doctor_desc') return doctorName(billDoctorDetail(b)).localeCompare(doctorName(billDoctorDetail(a)))
       return new Date(b.created_at || 0) - new Date(a.created_at || 0)
     })
     return rows
@@ -203,8 +213,8 @@ export function BillListPage() {
         breadcrumb={[{ label: 'Billing' }]}
         description={
           isDoctor
-            ? 'Showing bills linked to your appointments only. Search by patient name, or filter by payment status and created date.'
-            : 'Search by patient name. Filter by payment status and created date.'
+            ? 'Showing bills linked to your appointments only. Search by patient or doctor name, or filter by payment status and created date.'
+            : 'Search by patient or doctor name. Filter by payment status and created date.'
         }
         actions={
           canWrite && (
@@ -243,7 +253,7 @@ export function BillListPage() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search patient name"
+              placeholder="Search patient or doctor name"
               className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
             />
           </div>
@@ -332,18 +342,24 @@ export function BillListPage() {
                     key: 'patient',
                     header: 'Patient',
                     render: (row) => {
-                      const name = patientName(row.patient_detail)
+                      const patient = billPatientDetail(row)
+                      const name = patientName(patient)
                       return (
                         <div className="flex items-center gap-3">
                           <span
                             className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${avatarTone(name)}`}
                           >
-                            {patientInitials(row.patient_detail)}
+                            {patientInitials(patient)}
                           </span>
                           <span className="font-medium text-slate-800">{name}</span>
                         </div>
                       )
                     },
+                  },
+                  {
+                    key: 'doctor',
+                    header: 'Doctor',
+                    render: (row) => doctorName(billDoctorDetail(row)),
                   },
                   {
                     key: 'amount',
