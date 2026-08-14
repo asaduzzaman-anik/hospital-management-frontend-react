@@ -111,6 +111,18 @@ export function Icon({ name, className = 'h-5 w-5' }) {
         <path d="M12 10v4.5M12 17.2v.3" />
       </>
     ),
+    clock: (
+      <>
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="M12 7.5V12l3.2 2" />
+      </>
+    ),
+    check: (
+      <>
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="M8.2 12.2l2.4 2.4 5.2-5.2" />
+      </>
+    ),
   }
 
   return (

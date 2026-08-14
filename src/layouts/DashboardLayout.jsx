@@ -118,9 +118,15 @@ export function DashboardLayout() {
               <p className="text-sm font-medium text-slate-800">{fullName(user)}</p>
               <p className="text-xs capitalize text-slate-500">{user?.role}</p>
             </div>
-            <Button variant="secondary" size="sm" onClick={handleLogout}>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="px-2.5"
+              onClick={handleLogout}
+              aria-label="Logout"
+              title="Logout"
+            >
               <Icon name="logout" className="h-4 w-4" />
-              Logout
             </Button>
           </div>
         </header>

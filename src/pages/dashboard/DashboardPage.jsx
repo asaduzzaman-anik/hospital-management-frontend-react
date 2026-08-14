@@ -7,16 +7,24 @@ import { billsApi } from '../../api/bills'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Card, Alert, Spinner } from '../../components/ui/Feedback'
 import { Button } from '../../components/ui/Button'
+import { Icon } from '../../components/ui/Icon'
 import { useAuth } from '../../context/AuthContext'
 import { getApiError } from '../../utils/errors'
 import { fullName } from '../../utils/format'
 import { ROLE_LABELS } from '../../utils/constants'
 
-function StatCard({ label, value, to }) {
+function StatCard({ label, value, to, icon }) {
   const content = (
     <Card className="p-5 transition hover:border-teal-200">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p>
+      <div className="flex items-center gap-4">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
+          <Icon name={icon} className="h-6 w-6" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm text-slate-500">{label}</p>
+          <p className="mt-1 text-3xl font-semibold text-slate-900">{value}</p>
+        </div>
+      </div>
     </Card>
   )
   return to ? <Link to={to}>{content}</Link> : content
@@ -85,22 +93,25 @@ export function DashboardPage() {
       ) : (
         stats && (
           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <StatCard label="Doctors" value={stats.doctors} to="/doctors" />
+            <StatCard icon="stethoscope" label="Doctors" value={stats.doctors} to="/doctors" />
             {(user.role === 'admin' || user.role === 'receptionist' || user.role === 'doctor') && (
-              <StatCard label="Patients" value={stats.patients} to="/patients" />
+              <StatCard icon="users" label="Patients" value={stats.patients} to="/patients" />
             )}
             <StatCard
+              icon="clock"
               label={user.role === 'patient' || user.role === 'doctor' ? 'My pending appointments' : 'Pending appointments'}
               value={stats.pending}
               to="/appointments"
             />
             <StatCard
+              icon="check"
               label={user.role === 'patient' || user.role === 'doctor' ? 'My completed appointments' : 'Completed appointments'}
               value={stats.completed}
               to="/appointments"
             />
             {(user.role === 'admin' || user.role === 'receptionist' || user.role === 'patient') && (
               <StatCard
+                icon="receipt"
                 label={user.role === 'patient' ? 'My unpaid bills' : 'Unpaid bills'}
                 value={stats.unpaid}
                 to="/bills"
@@ -115,19 +126,44 @@ export function DashboardPage() {
           <h2 className="font-semibold text-slate-900">Quick actions</h2>
           <div className="mt-4 flex flex-wrap gap-2">
             {(user.role === 'patient' || user.role === 'admin' || user.role === 'receptionist') && (
-              <Link to="/appointments/new"><Button>Book appointment</Button></Link>
+              <Link to="/appointments/new">
+                <Button>
+                  <Icon name="calendar" className="h-4 w-4" />
+                  Book appointment
+                </Button>
+              </Link>
             )}
             {(user.role === 'admin' || user.role === 'receptionist') && (
               <>
-                <Link to="/patients/new"><Button variant="secondary">Add patient</Button></Link>
-                <Link to="/doctors/new"><Button variant="secondary">Add doctor</Button></Link>
+                <Link to="/patients/new">
+                  <Button variant="secondary">
+                    <Icon name="users" className="h-4 w-4" />
+                    Add patient
+                  </Button>
+                </Link>
+                <Link to="/doctors/new">
+                  <Button variant="secondary">
+                    <Icon name="stethoscope" className="h-4 w-4" />
+                    Add doctor
+                  </Button>
+                </Link>
               </>
             )}
             {user.role === 'admin' && (
-              <Link to="/receptionists/new"><Button variant="secondary">Add receptionist</Button></Link>
+              <Link to="/receptionists/new">
+                <Button variant="secondary">
+                  <Icon name="reception" className="h-4 w-4" />
+                  Add receptionist
+                </Button>
+              </Link>
             )}
             {(user.role === 'doctor' || user.role === 'admin') && (
-              <Link to="/prescriptions/new"><Button variant="secondary">New prescription</Button></Link>
+              <Link to="/prescriptions/new">
+                <Button variant="secondary">
+                  <Icon name="file" className="h-4 w-4" />
+                  New prescription
+                </Button>
+              </Link>
             )}
           </div>
         </Card>
