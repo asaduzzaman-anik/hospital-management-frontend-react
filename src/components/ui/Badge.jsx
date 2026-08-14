@@ -11,6 +11,14 @@ const styles = {
   doctor: 'bg-teal-50 text-teal-800 border-teal-200',
   patient: 'bg-sky-50 text-sky-800 border-sky-200',
   receptionist: 'bg-amber-50 text-amber-800 border-amber-200',
+  'A+': 'bg-rose-50 text-rose-700 border-rose-200',
+  'A-': 'bg-rose-50 text-rose-800 border-rose-200',
+  'B+': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'B-': 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  'AB+': 'bg-sky-50 text-sky-700 border-sky-200',
+  'AB-': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'O+': 'bg-orange-50 text-orange-700 border-orange-200',
+  'O-': 'bg-amber-50 text-amber-800 border-amber-200',
 }
 
 export function Badge({ children, tone = 'pending', className = '' }) {
