@@ -1,43 +1,58 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import { patientsApi } from '../../api/patients'
+import { appointmentsApi } from '../../api/appointments'
+import { fetchAllPages } from '../../api/client'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Alert, Card, Spinner } from '../../components/ui/Feedback'
 import { useAuth } from '../../context/AuthContext'
 import { STAFF_ROLES } from '../../utils/constants'
 import { getApiError } from '../../utils/errors'
-import { fullName, patientName } from '../../utils/format'
+import { fullName, patientName, relatedId } from '../../utils/format'
 
 export function PatientDetailPage() {
   const { id } = useParams()
   const { user } = useAuth()
   const canWrite = STAFF_ROLES.includes(user.role)
   const [patient, setPatient] = useState(null)
+  const [allowed, setAllowed] = useState(user.role !== 'doctor')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    patientsApi
-      .get(id)
-      .then((data) => {
-        if (!cancelled) setPatient(data)
-      })
-      .catch((err) => {
+    async function load() {
+      try {
+        const data = await patientsApi.get(id)
+        if (cancelled) return
+        setPatient(data)
+        if (user.role === 'doctor') {
+          const appointments = await fetchAllPages(appointmentsApi.list)
+          if (cancelled) return
+          const linkedIds = new Set(
+            appointments
+              .map((item) => Number(relatedId(item.patient) ?? item.patient_detail?.id))
+              .filter(Boolean),
+          )
+          setAllowed(linkedIds.has(Number(id)) || linkedIds.has(Number(data.id)))
+        }
+      } catch (err) {
         if (!cancelled) setError(getApiError(err))
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false)
-      })
+      }
+    }
+    load()
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, user.role])
 
   if (loading) return <Spinner />
   if (error) return <Alert>{error}</Alert>
   if (!patient) return null
+  if (!allowed) return <Navigate to="/forbidden" replace />
 
   return (
     <div>

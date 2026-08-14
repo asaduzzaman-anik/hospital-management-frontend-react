@@ -10,8 +10,9 @@ import { Button } from '../../components/ui/Button'
 import { Icon } from '../../components/ui/Icon'
 import { useAuth } from '../../context/AuthContext'
 import { getApiError } from '../../utils/errors'
-import { fullName } from '../../utils/format'
+import { fullName, relatedId } from '../../utils/format'
 import { ROLE_LABELS } from '../../utils/constants'
+import { fetchAllPages } from '../../api/client'
 
 function StatCard({ label, value, to, icon }) {
   const content = (
@@ -44,15 +45,24 @@ export function DashboardPage() {
       try {
         const [doctors, patients, pending, completed, unpaid] = await Promise.all([
           doctorsApi.list({ page: 1 }),
-          patientsApi.list({ page: 1 }),
+          user.role === 'doctor'
+            ? fetchAllPages(appointmentsApi.list)
+            : patientsApi.list({ page: 1 }),
           appointmentsApi.list({ page: 1, status: 'pending' }),
           appointmentsApi.list({ page: 1, status: 'completed' }),
           billsApi.list({ page: 1, paid: false }),
         ])
         if (!cancelled) {
+          const patientCount = user.role === 'doctor'
+            ? new Set(
+              (patients || [])
+                .map((item) => Number(relatedId(item.patient) ?? item.patient_detail?.id))
+                .filter(Boolean),
+            ).size
+            : patients.count ?? 0
           setStats({
             doctors: doctors.count ?? 0,
-            patients: patients.count ?? 0,
+            patients: patientCount,
             pending: pending.count ?? 0,
             completed: completed.count ?? 0,
             unpaid: unpaid.count ?? 0,
@@ -68,7 +78,7 @@ export function DashboardPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [user.role])
 
   return (
     <div>
@@ -95,7 +105,12 @@ export function DashboardPage() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <StatCard icon="stethoscope" label="Doctors" value={stats.doctors} to="/doctors" />
             {(user.role === 'admin' || user.role === 'receptionist' || user.role === 'doctor') && (
-              <StatCard icon="users" label="Patients" value={stats.patients} to="/patients" />
+              <StatCard
+                icon="users"
+                label={user.role === 'doctor' ? 'My patients' : 'Patients'}
+                value={stats.patients}
+                to="/patients"
+              />
             )}
             <StatCard
               icon="clock"

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { patientsApi } from '../../api/patients'
+import { appointmentsApi } from '../../api/appointments'
+import { fetchAllPages } from '../../api/client'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Icon } from '../../components/ui/Icon'
@@ -13,7 +15,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { PAGE_SIZE, STAFF_ROLES } from '../../utils/constants'
 import { getApiError } from '../../utils/errors'
-import { patientName } from '../../utils/format'
+import { hasPersonName, patientName, relatedId } from '../../utils/format'
 
 const SORT_OPTIONS = [
   { value: 'name_asc', label: 'Name (A-Z)' },
@@ -50,10 +52,43 @@ function avatarTone(name) {
   return AVATAR_TONES[hash % AVATAR_TONES.length]
 }
 
+function appointmentPatientId(appointment) {
+  return Number(relatedId(appointment?.patient) ?? appointment?.patient_detail?.id) || null
+}
+
+function matchesPatientSearch(patient, query) {
+  const q = query.trim().toLowerCase()
+  if (!q) return true
+  return [
+    patientName(patient),
+    patient.phone,
+    patient.blood_group,
+    patient.user_detail?.username,
+  ].some((value) => String(value || '').toLowerCase().includes(q))
+}
+
+async function loadLinkedPatients() {
+  const appointments = await fetchAllPages(appointmentsApi.list)
+  const byId = new Map()
+  for (const item of appointments) {
+    const id = appointmentPatientId(item)
+    if (!id || byId.has(id)) continue
+    byId.set(id, item.patient_detail || null)
+  }
+  const patients = await Promise.all(
+    [...byId.entries()].map(async ([id, detail]) => {
+      if (hasPersonName(detail)) return { ...detail, id: detail.id || id }
+      return patientsApi.get(id).catch(() => detail)
+    }),
+  )
+  return patients.filter(Boolean)
+}
+
 export function PatientListPage() {
   const { user } = useAuth()
   const toast = useToast()
   const canWrite = STAFF_ROLES.includes(user.role)
+  const isDoctor = user.role === 'doctor'
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('name_asc')
@@ -67,7 +102,17 @@ export function PatientListPage() {
     setLoading(true)
     setError('')
     try {
-      setData(await patientsApi.list({ page: nextPage, search: nextSearch || undefined }))
+      if (isDoctor) {
+        const linked = await loadLinkedPatients()
+        const matched = linked.filter((patient) => matchesPatientSearch(patient, nextSearch))
+        const start = (nextPage - 1) * PAGE_SIZE
+        setData({
+          results: matched.slice(start, start + PAGE_SIZE),
+          count: matched.length,
+        })
+      } else {
+        setData(await patientsApi.list({ page: nextPage, search: nextSearch || undefined }))
+      }
     } catch (err) {
       setError(getApiError(err))
     } finally {
@@ -110,7 +155,11 @@ export function PatientListPage() {
       <PageHeader
         title="Patients"
         breadcrumb={[{ label: 'Patients' }]}
-        description="Search uses first name, last name, phone, and blood group."
+        description={
+          isDoctor
+            ? 'Showing patients from your appointments only. Search uses first name, last name, phone, and blood group.'
+            : 'Search uses first name, last name, phone, and blood group.'
+        }
         actions={
           canWrite && (
             <Link to="/patients/new">
