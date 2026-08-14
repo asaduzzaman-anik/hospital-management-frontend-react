@@ -11,9 +11,9 @@ import { Table, Pagination } from '../../components/ui/Table'
 import { Badge } from '../../components/ui/Badge'
 import { Alert, EmptyState, Spinner } from '../../components/ui/Feedback'
 import { useAuth } from '../../context/AuthContext'
-import { APPOINTMENT_STATUSES, STAFF_ROLES } from '../../utils/constants'
+import { APPOINTMENT_STATUSES, PAGE_SIZE, STAFF_ROLES } from '../../utils/constants'
 import { getApiError } from '../../utils/errors'
-import { doctorName, formatDateTime, patientName } from '../../utils/format'
+import { doctorName, formatDateTime, patientName, toDateKey } from '../../utils/format'
 
 export function AppointmentListPage() {
   const { user } = useAuth()
@@ -37,12 +37,22 @@ export function AppointmentListPage() {
     setLoading(true)
     setError('')
     try {
-      const params = { page: nextPage }
+      const params = {}
       if (filters.doctor) params.doctor = filters.doctor
       if (filters.patient) params.patient = filters.patient
       if (filters.status) params.status = filters.status
-      if (filters.appointment_date) params.appointment_date = filters.appointment_date
-      setData(await appointmentsApi.list(params))
+
+      if (filters.appointment_date) {
+        const all = await fetchAllPages(appointmentsApi.list, params)
+        const matched = all.filter((item) => toDateKey(item.appointment_date) === filters.appointment_date)
+        const start = (nextPage - 1) * PAGE_SIZE
+        setData({
+          results: matched.slice(start, start + PAGE_SIZE),
+          count: matched.length,
+        })
+      } else {
+        setData(await appointmentsApi.list({ ...params, page: nextPage }))
+      }
     } catch (err) {
       setError(getApiError(err))
     } finally {
@@ -60,7 +70,7 @@ export function AppointmentListPage() {
       <PageHeader
         title="Appointments"
         breadcrumb={[{ label: 'Appointments' }]}
-        description="Status filters use the backend query params. Date filtering is an exact DateTime match."
+        description="Status, doctor, and patient filters use the backend query params. The date filter shows appointments on the selected day."
         actions={
           canBook && (
             <Link to="/appointments/new">
@@ -98,7 +108,8 @@ export function AppointmentListPage() {
           ))}
         </Select>
         <Input
-          type="datetime-local"
+          type="date"
+          aria-label="Filter by date"
           value={filters.appointment_date}
           onChange={(e) => setFilters((c) => ({ ...c, appointment_date: e.target.value }))}
         />
