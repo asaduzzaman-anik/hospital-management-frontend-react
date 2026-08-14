@@ -141,6 +141,9 @@ export function Icon({ name, className = 'h-5 w-5', strokeWidth = '1.8' }) {
     chevronRight: (
       <path d="M9.5 6l6 6-6 6" />
     ),
+    chevronDown: (
+      <path d="M6 9l6 6 6-6" />
+    ),
     alert: (
       <>
         <path d="M12 4.5L21 19.5H3L12 4.5z" />
