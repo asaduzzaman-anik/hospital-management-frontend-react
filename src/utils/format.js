@@ -18,6 +18,21 @@ export function isOwnDoctorAppointment(appointment, user, doctorProfile) {
   return doctor?.user === user.id || doctor?.user_detail?.id === user.id
 }
 
+export function relatedId(value) {
+  if (value == null) return null
+  if (typeof value === 'object') return value.id ?? null
+  return value
+}
+
+export function isDoctorRelatedBill(bill, { user, doctorProfile, appointmentIds, patientIds }) {
+  if (user?.role !== 'doctor') return true
+  const appointmentId = relatedId(bill?.appointment) ?? bill?.appointment_detail?.id
+  if (appointmentId != null) return appointmentIds.has(Number(appointmentId))
+  if (bill?.appointment_detail) return isOwnDoctorAppointment(bill.appointment_detail, user, doctorProfile)
+  const patientId = relatedId(bill?.patient) ?? bill?.patient_detail?.id
+  return patientId != null && patientIds.has(Number(patientId))
+}
+
 export function patientName(patient) {
   if (!patient) return '—'
   return fullName(patient.user_detail)

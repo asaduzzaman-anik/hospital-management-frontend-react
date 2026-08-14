@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Navigate, useParams } from 'react-router-dom'
 import { billsApi } from '../../api/bills'
+import { appointmentsApi } from '../../api/appointments'
+import { fetchAllPages } from '../../api/client'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
@@ -9,35 +11,48 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { STAFF_ROLES } from '../../utils/constants'
 import { getApiError } from '../../utils/errors'
-import { formatDateTime, formatMoney, patientName } from '../../utils/format'
+import { formatDateTime, formatMoney, isDoctorRelatedBill, patientName, relatedId } from '../../utils/format'
 
 export function BillDetailPage() {
   const { id } = useParams()
-  const { user } = useAuth()
+  const { user, doctorProfile } = useAuth()
   const toast = useToast()
   const canMarkPaid = STAFF_ROLES.includes(user.role)
   const [bill, setBill] = useState(null)
+  const [allowed, setAllowed] = useState(user.role !== 'doctor')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [working, setWorking] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    billsApi
-      .get(id)
-      .then((data) => {
-        if (!cancelled) setBill(data)
-      })
-      .catch((err) => {
+    async function load() {
+      try {
+        const data = await billsApi.get(id)
+        if (cancelled) return
+        setBill(data)
+        if (user.role === 'doctor') {
+          const appointments = await fetchAllPages(appointmentsApi.list)
+          if (cancelled) return
+          const appointmentIds = new Set(appointments.map((item) => Number(item.id)))
+          const patientIds = new Set(
+            appointments
+              .map((item) => Number(relatedId(item.patient) ?? item.patient_detail?.id))
+              .filter(Boolean),
+          )
+          setAllowed(isDoctorRelatedBill(data, { user, doctorProfile, appointmentIds, patientIds }))
+        }
+      } catch (err) {
         if (!cancelled) setError(getApiError(err))
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false)
-      })
+      }
+    }
+    load()
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, user, doctorProfile])
 
   async function markPaid() {
     setWorking(true)
@@ -55,6 +70,7 @@ export function BillDetailPage() {
   if (loading) return <Spinner />
   if (error) return <Alert>{error}</Alert>
   if (!bill) return null
+  if (!allowed) return <Navigate to="/forbidden" replace />
 
   return (
     <div>

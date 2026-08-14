@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { billsApi } from '../../api/bills'
+import { appointmentsApi } from '../../api/appointments'
 import { fetchAllPages } from '../../api/client'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Button } from '../../components/ui/Button'
@@ -11,7 +12,7 @@ import { Alert, EmptyState, Spinner } from '../../components/ui/Feedback'
 import { useAuth } from '../../context/AuthContext'
 import { PAGE_SIZE, STAFF_ROLES } from '../../utils/constants'
 import { getApiError } from '../../utils/errors'
-import { formatDateTime, formatMoney, patientName, toDateKey } from '../../utils/format'
+import { formatDateTime, formatMoney, isDoctorRelatedBill, patientName, relatedId, toDateKey } from '../../utils/format'
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest first' },
@@ -104,8 +105,9 @@ function matchesDateRange(row, from, to) {
 }
 
 export function BillListPage() {
-  const { user } = useAuth()
+  const { user, doctorProfile } = useAuth()
   const canWrite = STAFF_ROLES.includes(user.role)
+  const isDoctor = user.role === 'doctor'
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [paid, setPaid] = useState('')
@@ -127,11 +129,23 @@ export function BillListPage() {
       const params = {}
       if (nextPaid !== '') params.paid = nextPaid
 
-      const needsClientFilter = Boolean(nextSearch.trim() || nextFrom || nextTo)
+      const needsClientFilter = Boolean(isDoctor || nextSearch.trim() || nextFrom || nextTo)
       if (needsClientFilter) {
-        const all = await fetchAllPages(billsApi.list, params)
+        const [all, appointments] = await Promise.all([
+          fetchAllPages(billsApi.list, params),
+          isDoctor ? fetchAllPages(appointmentsApi.list) : Promise.resolve([]),
+        ])
+        const appointmentIds = new Set(appointments.map((item) => Number(item.id)))
+        const patientIds = new Set(
+          appointments
+            .map((item) => Number(relatedId(item.patient) ?? item.patient_detail?.id))
+            .filter(Boolean),
+        )
         const matched = all.filter(
-          (row) => matchesPatientSearch(row, nextSearch) && matchesDateRange(row, nextFrom, nextTo),
+          (row) =>
+            isDoctorRelatedBill(row, { user, doctorProfile, appointmentIds, patientIds }) &&
+            matchesPatientSearch(row, nextSearch) &&
+            matchesDateRange(row, nextFrom, nextTo),
         )
         const start = (nextPage - 1) * PAGE_SIZE
         setData({
@@ -187,7 +201,11 @@ export function BillListPage() {
       <PageHeader
         title="Billing"
         breadcrumb={[{ label: 'Billing' }]}
-        description="Search by patient name. Filter by payment status and created date."
+        description={
+          isDoctor
+            ? 'Showing bills linked to your appointments only. Search by patient name, or filter by payment status and created date.'
+            : 'Search by patient name. Filter by payment status and created date.'
+        }
         actions={
           canWrite && (
             <Link to="/bills/new">
