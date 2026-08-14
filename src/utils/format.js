@@ -10,6 +10,14 @@ export function doctorName(doctor) {
   return name === '—' ? 'Doctor' : `Dr. ${name}`
 }
 
+export function isOwnDoctorAppointment(appointment, user, doctorProfile) {
+  if (user?.role !== 'doctor' || !doctorProfile || !appointment) return false
+  const doctorId = appointment.doctor ?? appointment.doctor_detail?.id
+  if (doctorId != null && Number(doctorId) === Number(doctorProfile.id)) return true
+  const doctor = appointment.doctor_detail
+  return doctor?.user === user.id || doctor?.user_detail?.id === user.id
+}
+
 export function patientName(patient) {
   if (!patient) return '—'
   return fullName(patient.user_detail)

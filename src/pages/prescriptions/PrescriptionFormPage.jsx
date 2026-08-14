@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { prescriptionsApi } from '../../api/prescriptions'
 import { appointmentsApi } from '../../api/appointments'
 import { medicinesApi } from '../../api/medicines'
@@ -8,19 +8,33 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Input, Select, Textarea } from '../../components/ui/Fields'
 import { Alert, Card, Spinner } from '../../components/ui/Feedback'
+import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { getApiError, getFieldErrors } from '../../utils/errors'
-import { doctorName, formatDateTime, patientName } from '../../utils/format'
+import { doctorName, formatDateTime, isOwnDoctorAppointment, patientName } from '../../utils/format'
 
 const emptyRow = () => ({ medicine: '', dosage: '', duration: '' })
 
+function medicineRowsFromPrescription(prescription) {
+  const rows = (prescription.medicines || []).map((row) => ({
+    medicine: String(row.medicine || row.medicine_detail?.id || ''),
+    dosage: row.dosage || '',
+    duration: row.duration || '',
+  }))
+  return rows.length ? rows : [emptyRow()]
+}
+
 export function PrescriptionFormPage() {
+  const { id } = useParams()
+  const isEdit = Boolean(id)
   const navigate = useNavigate()
   const location = useLocation()
   const toast = useToast()
+  const { user, doctorProfile } = useAuth()
   const [appointments, setAppointments] = useState([])
   const [existing, setExisting] = useState([])
   const [medicines, setMedicines] = useState([])
+  const [linkedAppointment, setLinkedAppointment] = useState(null)
   const [values, setValues] = useState({
     appointment: location.state?.appointmentId || '',
     diagnosis: '',
@@ -36,15 +50,35 @@ export function PrescriptionFormPage() {
     let cancelled = false
     async function load() {
       try {
-        const [completed, prescriptions, medicineList] = await Promise.all([
-          fetchAllPages(appointmentsApi.list, { status: 'completed' }),
-          fetchAllPages(prescriptionsApi.list),
-          fetchAllPages(medicinesApi.list),
-        ])
-        if (cancelled) return
-        setAppointments(completed)
-        setExisting(prescriptions)
-        setMedicines(medicineList)
+        if (isEdit) {
+          const [prescription, medicineList] = await Promise.all([
+            prescriptionsApi.get(id),
+            fetchAllPages(medicinesApi.list),
+          ])
+          if (cancelled) return
+          const appointment = prescription.appointment
+            ? await appointmentsApi.get(prescription.appointment).catch(() => null)
+            : null
+          if (cancelled) return
+          setLinkedAppointment(appointment)
+          setMedicines(medicineList)
+          setValues({
+            appointment: prescription.appointment || '',
+            diagnosis: prescription.diagnosis || '',
+            notes: prescription.notes || '',
+            medicines: medicineRowsFromPrescription(prescription),
+          })
+        } else {
+          const [completed, prescriptions, medicineList] = await Promise.all([
+            fetchAllPages(appointmentsApi.list, { status: 'completed' }),
+            fetchAllPages(prescriptionsApi.list),
+            fetchAllPages(medicinesApi.list),
+          ])
+          if (cancelled) return
+          setAppointments(completed)
+          setExisting(prescriptions)
+          setMedicines(medicineList)
+        }
       } catch (error) {
         if (!cancelled) setFormError(getApiError(error))
       } finally {
@@ -55,7 +89,7 @@ export function PrescriptionFormPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [id, isEdit])
 
   const usedAppointmentIds = useMemo(
     () => new Set(existing.map((item) => item.appointment)),
@@ -63,6 +97,7 @@ export function PrescriptionFormPage() {
   )
 
   const eligibleAppointments = appointments.filter((item) => !usedAppointmentIds.has(item.id))
+  const ownsPrescription = isOwnDoctorAppointment(linkedAppointment, user, doctorProfile)
 
   function updateField(event) {
     setValues((current) => ({ ...current, [event.target.name]: event.target.value }))
@@ -107,7 +142,7 @@ export function PrescriptionFormPage() {
 
     setSubmitting(true)
     try {
-      await prescriptionsApi.create({
+      const payload = {
         appointment: Number(values.appointment),
         diagnosis: values.diagnosis.trim(),
         notes: values.notes.trim(),
@@ -116,9 +151,16 @@ export function PrescriptionFormPage() {
           dosage: row.dosage.trim(),
           duration: row.duration.trim(),
         })),
-      })
-      toast.success('Prescription created.')
-      navigate('/prescriptions')
+      }
+      if (isEdit) {
+        await prescriptionsApi.update(id, payload)
+        toast.success('Prescription updated.')
+        navigate(`/prescriptions/${id}`)
+      } else {
+        await prescriptionsApi.create(payload)
+        toast.success('Prescription created.')
+        navigate('/prescriptions')
+      }
     } catch (error) {
       setErrors(getFieldErrors(error))
       setFormError(getApiError(error))
@@ -128,18 +170,32 @@ export function PrescriptionFormPage() {
   }
 
   if (loading) return <Spinner />
+  if (isEdit && formError && !linkedAppointment) return <Alert>{formError}</Alert>
+  if (isEdit && !linkedAppointment) {
+    return <Alert>Could not load the linked appointment for this prescription.</Alert>
+  }
+  if (isEdit && !ownsPrescription) {
+    return <Navigate to="/forbidden" replace />
+  }
+
+  const appointmentOptions = isEdit && linkedAppointment ? [linkedAppointment] : eligibleAppointments
+  const cannotCreate = !isEdit && eligibleAppointments.length === 0
 
   return (
     <div>
       <PageHeader
-        title="New prescription"
-        breadcrumb={[{ label: 'Prescriptions', to: '/prescriptions' }, { label: 'New' }]}
-        description="A prescription can only be created for a completed appointment that does not already have one."
+        title={isEdit ? 'Edit prescription' : 'New prescription'}
+        breadcrumb={[{ label: 'Prescriptions', to: '/prescriptions' }, { label: isEdit ? 'Edit' : 'New' }]}
+        description={
+          isEdit
+            ? 'Update diagnosis, notes, and medicines. The linked appointment cannot be changed.'
+            : 'A prescription can only be created for a completed appointment that does not already have one.'
+        }
       />
       <Card className="p-6">
         <form className="space-y-5" onSubmit={handleSubmit}>
           {formError && <Alert>{formError}</Alert>}
-          {eligibleAppointments.length === 0 && (
+          {cannotCreate && (
             <Alert>No eligible completed appointments are available. Complete an appointment first, and ensure it does not already have a prescription.</Alert>
           )}
           <Select
@@ -149,9 +205,10 @@ export function PrescriptionFormPage() {
             value={values.appointment}
             onChange={updateField}
             error={errors.appointment}
+            disabled={isEdit}
           >
             <option value="">Select appointment</option>
-            {eligibleAppointments.map((item) => (
+            {appointmentOptions.map((item) => (
               <option key={item.id} value={item.id}>
                 #{item.id} · {patientName(item.patient_detail)} · {doctorName(item.doctor_detail)} · {formatDateTime(item.appointment_date)}
               </option>
@@ -199,10 +256,12 @@ export function PrescriptionFormPage() {
           </div>
 
           <div className="flex gap-2">
-            <Button type="submit" disabled={submitting || eligibleAppointments.length === 0}>
-              {submitting ? 'Saving...' : 'Create prescription'}
+            <Button type="submit" disabled={submitting || cannotCreate}>
+              {submitting ? 'Saving...' : isEdit ? 'Save changes' : 'Create prescription'}
             </Button>
-            <Button variant="secondary" onClick={() => navigate('/prescriptions')}>Cancel</Button>
+            <Button variant="secondary" onClick={() => navigate(isEdit ? `/prescriptions/${id}` : '/prescriptions')}>
+              Cancel
+            </Button>
           </div>
         </form>
       </Card>

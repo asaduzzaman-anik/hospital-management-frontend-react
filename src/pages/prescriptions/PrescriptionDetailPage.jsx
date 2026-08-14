@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { prescriptionsApi } from '../../api/prescriptions'
 import { appointmentsApi } from '../../api/appointments'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { Button } from '../../components/ui/Button'
 import { Table } from '../../components/ui/Table'
 import { Alert, Card, Spinner } from '../../components/ui/Feedback'
+import { useAuth } from '../../context/AuthContext'
 import { getApiError } from '../../utils/errors'
-import { doctorName, formatDateTime, patientName } from '../../utils/format'
+import { doctorName, formatDateTime, isOwnDoctorAppointment, patientName } from '../../utils/format'
 
 export function PrescriptionDetailPage() {
   const { id } = useParams()
+  const { user, doctorProfile } = useAuth()
   const [prescription, setPrescription] = useState(null)
   const [appointment, setAppointment] = useState(null)
   const [error, setError] = useState('')
@@ -45,11 +48,20 @@ export function PrescriptionDetailPage() {
   if (error) return <Alert>{error}</Alert>
   if (!prescription) return null
 
+  const canEdit = isOwnDoctorAppointment(appointment, user, doctorProfile)
+
   return (
     <div>
       <PageHeader
         title={`Prescription #${prescription.id}`}
         breadcrumb={[{ label: 'Prescriptions', to: '/prescriptions' }, { label: 'Details' }]}
+        actions={
+          canEdit && (
+            <Link to={`/prescriptions/${prescription.id}/edit`}>
+              <Button>Edit</Button>
+            </Link>
+          )
+        }
       />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="p-6">

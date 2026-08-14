@@ -6,12 +6,13 @@ import { fetchAllPages } from '../../api/client'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Icon } from '../../components/ui/Icon'
+import { IconAction, IconActions } from '../../components/ui/IconAction'
 import { Table, Pagination } from '../../components/ui/Table'
 import { Alert, EmptyState, Spinner } from '../../components/ui/Feedback'
 import { useAuth } from '../../context/AuthContext'
 import { PAGE_SIZE } from '../../utils/constants'
 import { getApiError } from '../../utils/errors'
-import { doctorName, formatDateTime, patientName } from '../../utils/format'
+import { doctorName, formatDateTime, isOwnDoctorAppointment, patientName } from '../../utils/format'
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest first' },
@@ -102,7 +103,7 @@ function matchesSearch(row, query) {
 }
 
 export function PrescriptionListPage() {
-  const { user } = useAuth()
+  const { user, doctorProfile } = useAuth()
   const canCreate = user.role === 'doctor' || user.role === 'admin'
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
@@ -274,9 +275,12 @@ export function PrescriptionListPage() {
                   key: 'actions',
                   header: 'Actions',
                   render: (row) => (
-                    <Link to={`/prescriptions/${row.id}`} className="text-sm font-medium text-teal-700 hover:underline">
-                      View
-                    </Link>
+                    <IconActions>
+                      <IconAction to={`/prescriptions/${row.id}`} icon="eye" label="View" tone="teal" />
+                      {isOwnDoctorAppointment(row.appointment_detail, user, doctorProfile) && (
+                        <IconAction to={`/prescriptions/${row.id}/edit`} icon="pencil" label="Edit" />
+                      )}
+                    </IconActions>
                   ),
                 },
               ]}
