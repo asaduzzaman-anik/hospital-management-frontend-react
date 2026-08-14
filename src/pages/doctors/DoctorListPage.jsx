@@ -24,7 +24,6 @@ export function DoctorListPage() {
   const [search, setSearch] = useState('')
   const [department, setDepartment] = useState('')
   const [availability, setAvailability] = useState('')
-  const [availableOnly, setAvailableOnly] = useState(false)
   const [departments, setDepartments] = useState([])
   const [data, setData] = useState({ results: [], count: 0 })
   const [loading, setLoading] = useState(true)
@@ -40,16 +39,10 @@ export function DoctorListPage() {
     setLoading(true)
     setError('')
     try {
-      if (availableOnly) {
-        const results = await doctorsApi.available()
-        const list = Array.isArray(results) ? results : results.results || []
-        setData({ results: list, count: list.length })
-      } else {
-        const params = { page: nextPage, search: search || undefined }
-        if (department) params.department = department
-        if (availability !== '') params.is_available = availability
-        setData(await doctorsApi.list(params))
-      }
+      const params = { page: nextPage, search: search || undefined }
+      if (department) params.department = department
+      if (availability !== '') params.is_available = availability
+      setData(await doctorsApi.list(params))
     } catch (err) {
       setError(getApiError(err))
     } finally {
@@ -60,7 +53,7 @@ export function DoctorListPage() {
   useEffect(() => {
     load(page)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, availableOnly])
+  }, [page])
 
   function applyFilters(event) {
     event.preventDefault()
@@ -97,7 +90,7 @@ export function DoctorListPage() {
         }
       />
 
-      <form className="mb-5 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-5" onSubmit={applyFilters}>
+      <form className="mb-5 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-4" onSubmit={applyFilters}>
         <Input placeholder="Search name, specialization, department" value={search} onChange={(e) => setSearch(e.target.value)} />
         <Select value={department} onChange={(e) => setDepartment(e.target.value)}>
           <option value="">All departments</option>
@@ -105,15 +98,11 @@ export function DoctorListPage() {
             <option key={item.id} value={item.id}>{item.name}</option>
           ))}
         </Select>
-        <Select value={availability} onChange={(e) => setAvailability(e.target.value)} disabled={availableOnly}>
+        <Select value={availability} onChange={(e) => setAvailability(e.target.value)}>
           <option value="">Any availability</option>
           <option value="true">Available</option>
           <option value="false">Unavailable</option>
         </Select>
-        <label className="flex items-center gap-2 text-sm text-slate-600">
-          <input type="checkbox" checked={availableOnly} onChange={(e) => { setAvailableOnly(e.target.checked); setPage(1) }} />
-          Available endpoint
-        </label>
         <Button type="submit">Apply filters</Button>
       </form>
 
@@ -160,7 +149,7 @@ export function DoctorListPage() {
             ]}
             rows={data.results}
           />
-          {!availableOnly && <Pagination page={page} count={data.count} onPageChange={setPage} />}
+          <Pagination page={page} count={data.count} onPageChange={setPage} />
         </>
       )}
 
