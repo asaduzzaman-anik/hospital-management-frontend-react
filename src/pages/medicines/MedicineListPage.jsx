@@ -4,6 +4,7 @@ import { medicinesApi } from '../../api/medicines'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Fields'
+import { IconAction, IconActions } from '../../components/ui/IconAction'
 import { Table, Pagination } from '../../components/ui/Table'
 import { Alert, EmptyState, Spinner } from '../../components/ui/Feedback'
 import { Modal } from '../../components/ui/Modal'
@@ -98,17 +99,20 @@ export function MedicineListPage() {
                 key: 'actions',
                 header: 'Actions',
                 render: (row) => (
-                  <div className="flex gap-2">
-                    <Link to={`/medicines/${row.id}`} className="text-sm font-medium text-teal-700 hover:underline">View</Link>
+                  <IconActions>
+                    <IconAction to={`/medicines/${row.id}`} icon="eye" label="View" tone="teal" />
                     {canWrite && (
                       <>
-                        <Link to={`/medicines/${row.id}/edit`} className="text-sm font-medium text-slate-700 hover:underline">Edit</Link>
-                        <button type="button" className="text-sm font-medium text-rose-600 hover:underline" onClick={() => setPendingDelete(row)}>
-                          Delete
-                        </button>
+                        <IconAction to={`/medicines/${row.id}/edit`} icon="pencil" label="Edit" />
+                        <IconAction
+                          icon="trash"
+                          label="Delete"
+                          tone="rose"
+                          onClick={() => setPendingDelete(row)}
+                        />
                       </>
                     )}
-                  </div>
+                  </IconActions>
                 ),
               },
             ]}
