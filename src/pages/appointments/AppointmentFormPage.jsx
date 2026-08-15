@@ -27,6 +27,7 @@ export function AppointmentFormPage() {
   const [formError, setFormError] = useState('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [locked, setLocked] = useState(false)
 
   const isStaff = STAFF_ROLES.includes(user.role)
 
@@ -44,6 +45,10 @@ export function AppointmentFormPage() {
         if (isEdit) {
           const appointment = await appointmentsApi.get(id)
           if (!cancelled) {
+            if (appointment.status !== 'pending') {
+              setLocked(true)
+              setFormError('Only pending appointments can be edited.')
+            }
             setValues({
               patient: appointment.patient || '',
               doctor: appointment.doctor || '',
@@ -83,6 +88,10 @@ export function AppointmentFormPage() {
     setErrors(nextErrors)
     setFormError('')
     if (Object.keys(nextErrors).length) return
+    if (locked) {
+      setFormError('Only pending appointments can be edited.')
+      return
+    }
 
     setSubmitting(true)
     try {
@@ -155,7 +164,7 @@ export function AppointmentFormPage() {
             error={errors.appointment_date}
           />
           <div className="flex gap-2">
-            <Button type="submit" disabled={submitting || (user.role === 'patient' && !patientProfile)}>
+            <Button type="submit" disabled={submitting || locked || (user.role === 'patient' && !patientProfile)}>
               {submitting ? 'Saving...' : 'Save'}
             </Button>
             <Button variant="secondary" onClick={() => navigate('/appointments')}>Cancel</Button>

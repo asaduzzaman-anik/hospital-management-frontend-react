@@ -74,8 +74,6 @@ export function AppRoutes() {
           <Route path="/appointments" element={<AppointmentListPage />} />
           <Route element={<RoleRoute roles={['admin', 'receptionist', 'patient']} />}>
             <Route path="/appointments/new" element={<AppointmentFormPage />} />
-          </Route>
-          <Route element={<RoleRoute roles={['admin', 'receptionist']} />}>
             <Route path="/appointments/:id/edit" element={<AppointmentFormPage />} />
           </Route>
           <Route path="/appointments/:id" element={<AppointmentDetailPage />} />

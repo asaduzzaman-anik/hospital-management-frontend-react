@@ -7,10 +7,13 @@ import { fetchAllPages } from '../../api/client'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Icon } from '../../components/ui/Icon'
+import { IconAction, IconActions } from '../../components/ui/IconAction'
 import { Table, Pagination } from '../../components/ui/Table'
 import { Badge } from '../../components/ui/Badge'
 import { Alert, EmptyState, Spinner } from '../../components/ui/Feedback'
+import { Modal } from '../../components/ui/Modal'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 import { APPOINTMENT_STATUSES, PAGE_SIZE, STAFF_ROLES } from '../../utils/constants'
 import { getApiError } from '../../utils/errors'
 import { doctorName, formatDateTime, patientName, toDateKey } from '../../utils/format'
@@ -208,7 +211,9 @@ function matchesDateRange(value, from, to) {
 
 export function AppointmentListPage() {
   const { user } = useAuth()
+  const toast = useToast()
   const canBook = user.role === 'patient' || STAFF_ROLES.includes(user.role)
+  const canMutate = canBook
   const canFilterPatients = STAFF_ROLES.includes(user.role) || user.role === 'doctor'
   const [page, setPage] = useState(1)
   const [doctor, setDoctor] = useState('')
@@ -222,6 +227,8 @@ export function AppointmentListPage() {
   const [data, setData] = useState({ results: [], count: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [pendingDelete, setPendingDelete] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     fetchAllPages(doctorsApi.list)
@@ -286,6 +293,21 @@ export function AppointmentListPage() {
     setSort('newest')
     setPage(1)
     load(1, { doctor: '', patient: '', status: '', dateFrom: '', dateTo: '' })
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete || pendingDelete.status !== 'pending') return
+    setDeleting(true)
+    try {
+      await appointmentsApi.remove(pendingDelete.id)
+      toast.success('Appointment deleted.')
+      setPendingDelete(null)
+      load(page)
+    } catch (err) {
+      toast.error(getApiError(err))
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const sortedRows = useMemo(() => {
@@ -475,9 +497,20 @@ export function AppointmentListPage() {
                     key: 'actions',
                     header: 'Actions',
                     render: (row) => (
-                      <Link to={`/appointments/${row.id}`} className="text-sm font-medium text-teal-700 hover:underline">
-                        View
-                      </Link>
+                      <IconActions>
+                        <IconAction to={`/appointments/${row.id}`} icon="eye" label="View" tone="teal" />
+                        {canMutate && row.status === 'pending' && (
+                          <>
+                            <IconAction to={`/appointments/${row.id}/edit`} icon="pencil" label="Edit" />
+                            <IconAction
+                              icon="trash"
+                              label="Delete"
+                              tone="rose"
+                              onClick={() => setPendingDelete(row)}
+                            />
+                          </>
+                        )}
+                      </IconActions>
                     ),
                   },
                 ]}
@@ -495,6 +528,22 @@ export function AppointmentListPage() {
           )}
         </section>
       </div>
+
+      <Modal
+        open={Boolean(pendingDelete)}
+        title="Delete appointment"
+        onClose={() => setPendingDelete(null)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setPendingDelete(null)}>Cancel</Button>
+            <Button variant="danger" disabled={deleting} onClick={confirmDelete}>
+              {deleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </>
+        }
+      >
+        Remove appointment #{pendingDelete?.id}? Only pending appointments can be deleted.
+      </Modal>
     </div>
   )
 }

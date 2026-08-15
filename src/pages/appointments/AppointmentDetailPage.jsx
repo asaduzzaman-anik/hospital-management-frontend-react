@@ -5,6 +5,7 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { Alert, Card, Spinner } from '../../components/ui/Feedback'
+import { Modal } from '../../components/ui/Modal'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { STAFF_ROLES } from '../../utils/constants'
@@ -20,6 +21,8 @@ export function AppointmentDetailPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [working, setWorking] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -59,6 +62,21 @@ export function AppointmentDetailPage() {
   const canComplete = (user.role === 'doctor' || user.role === 'admin') && appointment.status === 'approved'
   const canCancel = appointment.status === 'pending' || appointment.status === 'approved'
   const canPrescribe = (user.role === 'doctor' || user.role === 'admin') && appointment.status === 'completed'
+  const canMutate = appointment.status === 'pending' && (STAFF_ROLES.includes(user.role) || user.role === 'patient')
+
+  async function handleDelete() {
+    setDeleting(true)
+    try {
+      await appointmentsApi.remove(appointment.id)
+      toast.success('Appointment deleted.')
+      navigate('/appointments')
+    } catch (err) {
+      toast.error(getApiError(err))
+    } finally {
+      setDeleting(false)
+      setConfirmDelete(false)
+    }
+  }
 
   return (
     <div>
@@ -67,10 +85,13 @@ export function AppointmentDetailPage() {
         breadcrumb={[{ label: 'Appointments', to: '/appointments' }, { label: 'Details' }]}
         actions={
           <div className="flex flex-wrap gap-2">
-            {STAFF_ROLES.includes(user.role) && appointment.status === 'pending' && (
-              <Link to={`/appointments/${appointment.id}/edit`}>
-                <Button variant="secondary">Edit</Button>
-              </Link>
+            {canMutate && (
+              <>
+                <Link to={`/appointments/${appointment.id}/edit`}>
+                  <Button variant="secondary">Edit</Button>
+                </Link>
+                <Button variant="danger" onClick={() => setConfirmDelete(true)}>Delete</Button>
+              </>
             )}
             {canApprove && (
               <Button disabled={Boolean(working)} onClick={() => runAction('approve', 'approved')}>
@@ -110,6 +131,22 @@ export function AppointmentDetailPage() {
       <div className="mt-4">
         <Button variant="ghost" onClick={() => navigate('/appointments')}>Back to list</Button>
       </div>
+
+      <Modal
+        open={confirmDelete}
+        title="Delete appointment"
+        onClose={() => setConfirmDelete(false)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+            <Button variant="danger" disabled={deleting} onClick={handleDelete}>
+              {deleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </>
+        }
+      >
+        Remove appointment #{appointment.id}? Only pending appointments can be deleted.
+      </Modal>
     </div>
   )
 }
