@@ -149,28 +149,28 @@ export function DashboardPage() {
               </Link>
             )}
             {(user.role === 'admin' || user.role === 'receptionist') && (
+              <Link to="/patients/new">
+                <Button variant="secondary">
+                  <Icon name="users" className="h-4 w-4" />
+                  Add patient
+                </Button>
+              </Link>
+            )}
+            {user.role === 'admin' && (
               <>
-                <Link to="/patients/new">
-                  <Button variant="secondary">
-                    <Icon name="users" className="h-4 w-4" />
-                    Add patient
-                  </Button>
-                </Link>
                 <Link to="/doctors/new">
                   <Button variant="secondary">
                     <Icon name="stethoscope" className="h-4 w-4" />
                     Add doctor
                   </Button>
                 </Link>
+                <Link to="/receptionists/new">
+                  <Button variant="secondary">
+                    <Icon name="reception" className="h-4 w-4" />
+                    Add receptionist
+                  </Button>
+                </Link>
               </>
-            )}
-            {user.role === 'admin' && (
-              <Link to="/receptionists/new">
-                <Button variant="secondary">
-                  <Icon name="reception" className="h-4 w-4" />
-                  Add receptionist
-                </Button>
-              </Link>
             )}
             {(user.role === 'doctor' || user.role === 'admin') && (
               <Link to="/prescriptions/new">

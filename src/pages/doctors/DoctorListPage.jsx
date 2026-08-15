@@ -13,7 +13,7 @@ import { Alert, EmptyState, Spinner } from '../../components/ui/Feedback'
 import { Modal } from '../../components/ui/Modal'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
-import { PAGE_SIZE, STAFF_ROLES } from '../../utils/constants'
+import { PAGE_SIZE, ROLES } from '../../utils/constants'
 import { getApiError } from '../../utils/errors'
 import { doctorName } from '../../utils/format'
 
@@ -43,7 +43,7 @@ function RadioOption({ name, value, checked, onChange, children }) {
 export function DoctorListPage() {
   const { user } = useAuth()
   const toast = useToast()
-  const canWrite = STAFF_ROLES.includes(user.role)
+  const canWrite = user.role === ROLES.ADMIN
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [department, setDepartment] = useState('')

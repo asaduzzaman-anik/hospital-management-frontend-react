@@ -10,6 +10,7 @@ import { DepartmentListPage } from '../pages/departments/DepartmentListPage'
 import { DepartmentFormPage } from '../pages/departments/DepartmentFormPage'
 import { ReceptionistListPage } from '../pages/receptionists/ReceptionistListPage'
 import { ReceptionistFormPage } from '../pages/receptionists/ReceptionistFormPage'
+import { ReceptionistDetailPage } from '../pages/receptionists/ReceptionistDetailPage'
 import { DoctorListPage } from '../pages/doctors/DoctorListPage'
 import { DoctorDetailPage } from '../pages/doctors/DoctorDetailPage'
 import { DoctorFormPage } from '../pages/doctors/DoctorFormPage'
@@ -53,10 +54,11 @@ export function AppRoutes() {
             <Route path="/receptionists" element={<ReceptionistListPage />} />
             <Route path="/receptionists/new" element={<ReceptionistFormPage />} />
             <Route path="/receptionists/:id/edit" element={<ReceptionistFormPage />} />
+            <Route path="/receptionists/:id" element={<ReceptionistDetailPage />} />
           </Route>
 
           <Route path="/doctors" element={<DoctorListPage />} />
-          <Route element={<RoleRoute roles={['admin', 'receptionist']} />}>
+          <Route element={<RoleRoute roles={['admin']} />}>
             <Route path="/doctors/new" element={<DoctorFormPage />} />
             <Route path="/doctors/:id/edit" element={<DoctorFormPage />} />
           </Route>

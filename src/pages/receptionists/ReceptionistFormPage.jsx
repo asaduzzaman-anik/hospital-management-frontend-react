@@ -118,7 +118,7 @@ export function ReceptionistFormPage() {
         description={
           isEdit
             ? 'Update the receptionist account name and email. Username cannot be changed here.'
-            : 'Creates a user with the receptionist role. They can then sign in and manage doctors, patients, appointments, and billing.'
+            : 'Creates a user with the receptionist role. They can then sign in and manage patients, appointments, and billing.'
         }
       />
       <Card className="max-w-3xl p-6">

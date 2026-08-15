@@ -6,14 +6,14 @@ import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { Alert, Card, Spinner } from '../../components/ui/Feedback'
 import { useAuth } from '../../context/AuthContext'
-import { STAFF_ROLES } from '../../utils/constants'
+import { ROLES } from '../../utils/constants'
 import { getApiError } from '../../utils/errors'
 import { doctorName, fullName } from '../../utils/format'
 
 export function DoctorDetailPage() {
   const { id } = useParams()
   const { user } = useAuth()
-  const canWrite = STAFF_ROLES.includes(user.role)
+  const canWrite = user.role === ROLES.ADMIN
   const [doctor, setDoctor] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)

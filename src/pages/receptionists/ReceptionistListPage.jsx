@@ -237,6 +237,7 @@ export function ReceptionistListPage() {
                   header: 'Actions',
                   render: (row) => (
                     <IconActions>
+                      <IconAction to={`/receptionists/${row.id}`} icon="eye" label="View" tone="teal" />
                       <IconAction to={`/receptionists/${row.id}/edit`} icon="pencil" label="Edit" />
                       {row.id !== user.id && (
                         <IconAction
