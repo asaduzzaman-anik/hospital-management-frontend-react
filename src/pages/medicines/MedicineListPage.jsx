@@ -10,7 +10,7 @@ import { Alert, EmptyState, Spinner } from '../../components/ui/Feedback'
 import { Modal } from '../../components/ui/Modal'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
-import { PAGE_SIZE, STAFF_ROLES } from '../../utils/constants'
+import { PAGE_SIZE, ROLES, STAFF_ROLES } from '../../utils/constants'
 import { getApiError } from '../../utils/errors'
 
 const SORT_OPTIONS = [
@@ -22,7 +22,8 @@ const SORT_OPTIONS = [
 export function MedicineListPage() {
   const { user } = useAuth()
   const toast = useToast()
-  const canWrite = STAFF_ROLES.includes(user.role)
+  const canCreate = STAFF_ROLES.includes(user.role)
+  const canManage = user.role === ROLES.ADMIN
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('name_asc')
@@ -80,7 +81,7 @@ export function MedicineListPage() {
         breadcrumb={[{ label: 'Medicines' }]}
         description="Search uses medicine name and description."
         actions={
-          canWrite && (
+          canCreate && (
             <Link to="/medicines/new">
               <Button>
                 <Icon name="plus" className="h-4 w-4" />
@@ -175,7 +176,7 @@ export function MedicineListPage() {
                   render: (row) => (
                     <IconActions>
                       <IconAction to={`/medicines/${row.id}`} icon="eye" label="View" tone="teal" />
-                      {canWrite && (
+                      {canManage && (
                         <>
                           <IconAction to={`/medicines/${row.id}/edit`} icon="pencil" label="Edit" />
                           <IconAction

@@ -5,13 +5,13 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { Alert, Card, Spinner } from '../../components/ui/Feedback'
 import { useAuth } from '../../context/AuthContext'
-import { STAFF_ROLES } from '../../utils/constants'
+import { ROLES } from '../../utils/constants'
 import { getApiError } from '../../utils/errors'
 
 export function MedicineDetailPage() {
   const { id } = useParams()
   const { user } = useAuth()
-  const canWrite = STAFF_ROLES.includes(user.role)
+  const canManage = user.role === ROLES.ADMIN
   const [medicine, setMedicine] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -44,7 +44,7 @@ export function MedicineDetailPage() {
         title={medicine.name}
         breadcrumb={[{ label: 'Medicines', to: '/medicines' }, { label: 'Details' }]}
         actions={
-          canWrite && (
+          canManage && (
             <Link to={`/medicines/${medicine.id}/edit`}>
               <Button>Edit</Button>
             </Link>

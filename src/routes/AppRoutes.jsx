@@ -92,6 +92,8 @@ export function AppRoutes() {
           <Route path="/medicines" element={<MedicineListPage />} />
           <Route element={<RoleRoute roles={['admin', 'receptionist']} />}>
             <Route path="/medicines/new" element={<MedicineFormPage />} />
+          </Route>
+          <Route element={<RoleRoute roles={['admin']} />}>
             <Route path="/medicines/:id/edit" element={<MedicineFormPage />} />
           </Route>
           <Route path="/medicines/:id" element={<MedicineDetailPage />} />
