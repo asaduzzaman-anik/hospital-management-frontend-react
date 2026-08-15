@@ -53,6 +53,12 @@ export function LoginPage() {
           </Link>
         </>
       }
+      credit={
+        <>
+          <p>© 2026 MediCare Hospital Management</p>
+          <p className="mt-1">Developed by Md Asaduzzaman Anik</p>
+        </>
+      }
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         {formError && <Alert>{formError}</Alert>}
