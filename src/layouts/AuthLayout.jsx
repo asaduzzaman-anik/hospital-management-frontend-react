@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-export function AuthLayout({ title, subtitle, children, footer }) {
+export function AuthLayout({ title, subtitle, children, footer, credit }) {
   return (
     <div className="min-h-screen bg-slate-950">
       <div className="grid min-h-screen lg:grid-cols-2">
@@ -19,15 +19,22 @@ export function AuthLayout({ title, subtitle, children, footer }) {
           </div>
           <p className="relative text-sm text-teal-200">For authorized hospital staff and registered patients.</p>
         </div>
-        <div className="flex items-center justify-center bg-[#f4f7f8] px-4 py-10">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <div className="mb-6">
-              <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
-              {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
+        <div className="flex min-h-screen flex-col bg-[#f4f7f8]">
+          <div className="flex flex-1 items-center justify-center px-4 py-10">
+            <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+              <div className="mb-6">
+                <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
+                {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
+              </div>
+              {children}
+              {footer && <div className="mt-6 text-center text-sm text-slate-500">{footer}</div>}
             </div>
-            {children}
-            {footer && <div className="mt-6 text-center text-sm text-slate-500">{footer}</div>}
           </div>
+          {credit && (
+            <div className="px-4 py-4 text-center text-xs text-slate-400">
+              {credit}
+            </div>
+          )}
         </div>
       </div>
     </div>

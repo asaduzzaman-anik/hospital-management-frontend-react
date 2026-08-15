@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { Icon } from '../components/ui/Icon'
 import { Button } from '../components/ui/Button'
 import { fullName } from '../utils/format'
-import { ALL_ROLES, ROLE_LABELS } from '../utils/constants'
+import { ALL_ROLES } from '../utils/constants'
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: 'dashboard', roles: ALL_ROLES },
@@ -98,8 +98,8 @@ export function DashboardLayout() {
         </nav>
 
         <div className="border-t border-white/10 p-4">
-          <p className="text-sm font-medium text-white">{fullName(user)}</p>
-          <p className="text-xs text-slate-400">{ROLE_LABELS[user?.role] || user?.role}</p>
+          <p className="text-sm font-medium text-white">Developed by</p>
+          <p className="text-xs text-slate-400">Md Asaduzzaman Anik</p>
         </div>
       </aside>
 
