@@ -116,20 +116,20 @@ export function DashboardPage() {
               icon="clock"
               label={user.role === 'patient' || user.role === 'doctor' ? 'My pending appointments' : 'Pending appointments'}
               value={stats.pending}
-              to="/appointments"
+              to="/appointments?status=pending"
             />
             <StatCard
               icon="check"
               label={user.role === 'patient' || user.role === 'doctor' ? 'My completed appointments' : 'Completed appointments'}
               value={stats.completed}
-              to="/appointments"
+              to="/appointments?status=completed"
             />
             {(user.role === 'admin' || user.role === 'receptionist' || user.role === 'patient') && (
               <StatCard
                 icon="receipt"
                 label={user.role === 'patient' ? 'My unpaid bills' : 'Unpaid bills'}
                 value={stats.unpaid}
-                to="/bills"
+                to="/bills?paid=false"
               />
             )}
           </div>

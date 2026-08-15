@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { billsApi } from '../../api/bills'
 import { appointmentsApi } from '../../api/appointments'
 import { fetchAllPages } from '../../api/client'
@@ -111,13 +111,20 @@ function matchesDateRange(row, from, to) {
   return true
 }
 
+function paidFromSearch(searchParams) {
+  const value = searchParams.get('paid')
+  return value === 'true' || value === 'false' ? value : ''
+}
+
 export function BillListPage() {
   const { user, doctorProfile } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const urlPaid = paidFromSearch(searchParams)
   const canWrite = STAFF_ROLES.includes(user.role)
   const isDoctor = user.role === 'doctor'
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
-  const [paid, setPaid] = useState('')
+  const [paid, setPaid] = useState(urlPaid)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [sort, setSort] = useState('newest')
@@ -171,14 +178,24 @@ export function BillListPage() {
   }
 
   useEffect(() => {
-    load(page)
+    load(page, { paid: urlPaid })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page])
+  }, [page, urlPaid])
+
+  useEffect(() => {
+    setPaid(urlPaid)
+    setPage(1)
+  }, [urlPaid])
 
   function applyFilters(event) {
     event.preventDefault()
     setPage(1)
-    load(1)
+    if (paid === urlPaid) {
+      load(1)
+      return
+    }
+    if (paid) setSearchParams({ paid }, { replace: true })
+    else setSearchParams({}, { replace: true })
   }
 
   function resetFilters() {
@@ -188,6 +205,7 @@ export function BillListPage() {
     setDateTo('')
     setSort('newest')
     setPage(1)
+    if (urlPaid) setSearchParams({}, { replace: true })
     load(1, { search: '', paid: '', dateFrom: '', dateTo: '' })
   }
 

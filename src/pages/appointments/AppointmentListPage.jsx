@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { appointmentsApi } from '../../api/appointments'
 import { doctorsApi } from '../../api/doctors'
 import { patientsApi } from '../../api/patients'
@@ -209,16 +209,23 @@ function matchesDateRange(value, from, to) {
   return true
 }
 
+function appointmentStatusFromSearch(searchParams) {
+  const value = searchParams.get('status') || ''
+  return APPOINTMENT_STATUSES.some((item) => item.value === value) ? value : ''
+}
+
 export function AppointmentListPage() {
   const { user } = useAuth()
   const toast = useToast()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const urlStatus = appointmentStatusFromSearch(searchParams)
   const canBook = user.role === 'patient' || STAFF_ROLES.includes(user.role)
   const canMutate = canBook
   const canFilterPatients = STAFF_ROLES.includes(user.role) || user.role === 'doctor'
   const [page, setPage] = useState(1)
   const [doctor, setDoctor] = useState('')
   const [patient, setPatient] = useState('')
-  const [status, setStatus] = useState('')
+  const [status, setStatus] = useState(urlStatus)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [sort, setSort] = useState('newest')
@@ -274,14 +281,24 @@ export function AppointmentListPage() {
   }
 
   useEffect(() => {
-    load(page)
+    load(page, { status: urlStatus })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page])
+  }, [page, urlStatus])
+
+  useEffect(() => {
+    setStatus(urlStatus)
+    setPage(1)
+  }, [urlStatus])
 
   function applyFilters(event) {
     event.preventDefault()
     setPage(1)
-    load(1)
+    if (status === urlStatus) {
+      load(1)
+      return
+    }
+    if (status) setSearchParams({ status }, { replace: true })
+    else setSearchParams({}, { replace: true })
   }
 
   function resetFilters() {
@@ -292,6 +309,7 @@ export function AppointmentListPage() {
     setDateTo('')
     setSort('newest')
     setPage(1)
+    if (urlStatus) setSearchParams({}, { replace: true })
     load(1, { doctor: '', patient: '', status: '', dateFrom: '', dateTo: '' })
   }
 
